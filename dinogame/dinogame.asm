@@ -77,7 +77,7 @@ EntryInitializeShit:
 	sta	$002C
 	lda	#$23
 	sta	$002E
-	lda	#$40
+	lda	#$20
 	sta	$002F
 
 MainGameLoop:
@@ -132,32 +132,66 @@ dontMoveLeft:
 dontMoveRight:
 	; Check if moved
 	lda	$002D
-	cmp	0
+	cmp	#$0
 	bne notMovedThisFrame
 	lda	#$00
 	sta	$002C
 notMovedThisFrame:
+	jsr	DoJumping
+	jsr	DoFalling
 	rts
 
 Jump:
+	;lda	#$20
+	;sta	$0001
+	;jsr	SubtractFromOffset
+	;rts
+	lda	$002B
+	cmp	#$00
+	bne	nopeAlreadyJumping
 	lda	$002A
-	cmp	#$01
-	beq	nopeAlreadyJumping
-	lda	#$01
-	sta	$002A
+	cmp	#$00
+	bne	nopeAlreadyJumping ; actually falling
 	lda	#$04
 	sta	$002B
+nopeAlreadyJumping:
 	rts
 
 DoJumping:
+	lda	$002B
+	cmp	#$00
+	beq	dojumping_Done
+	tax
+	lda	#$20
+	sta	$0001
+	jsr	SubtractFromOffset
+	dex
+	txa
+	cmp	#$00
+	beq	dojumping_SetFall
+	stx	$002B
+	rts
+dojumping_SetFall:
+	lda	#$04
+	sta	$002A
+	stx	$002B
+dojumping_Done:
 	rts
 
-nopeAlreadyJumping:
+DoFalling:
+	lda	$002A
+	cmp	#$00
+	beq	dofalling_Done
+	tax
+	lda	#$20
+	sta	$0001
+	jsr	AddToOffset
+	dex
+	stx	$002A
+dofalling_Done:
 	rts
+
 MoveRight:
-	;ldx	$0028
-	;inx
-	;stx	$0028
 	ldx	#$01
 	stx	$002D
 	lda	#$01
@@ -166,9 +200,6 @@ MoveRight:
 	jsr	DinoIsMoving
 	rts
 MoveLeft:
-	;ldx	$0028
-	;dex
-	;stx	$0028
 	ldx	#$01
 	stx	$002D
 	lda	#$01
@@ -256,6 +287,21 @@ DrawDino:
 	drawdino_Anim0:
 		ldx	#$00
 DrawDinoForReal:
+	stx	$0003
+	lda #$20
+	sta	$2007
+	inx
+	lda #$20
+	sta	$2007
+	inx
+	lda #$20
+	sta	$2007
+	inx
+	lda #$20
+	sta	$2007
+	ldy #$04
+	jsr	PrintLine
+	ldx	$0003
 	lda	dino_sprites, x
 	sta	$2007
 	inx
@@ -265,6 +311,9 @@ DrawDinoForReal:
 	lda	dino_sprites, x
 	sta	$2007
 	inx
+	;lda	dino_sprites, x
+	;sta	$2007
+	;inx
 	ldy	#$03
 	jsr	PrintLine
 	inx
@@ -277,6 +326,9 @@ DrawDinoForReal:
 	lda	dino_sprites, x
 	sta	$2007
 	inx
+	;lda	dino_sprites, x
+	;sta	$2007
+	;inx
 	ldy	#$03
 	jsr	PrintLine
 	inx
@@ -289,6 +341,9 @@ DrawDinoForReal:
 	lda	dino_sprites, x
 	sta	$2007
 	inx
+	;lda	dino_sprites, x
+	;sta	$2007
+	;inx
 
 	; set attribute tables ( palette table is after screen )
 	ldx	#$40
@@ -341,8 +396,8 @@ WaitForVBlank:
 	rts
 
 killtime:
-	ldy #$4f
-	ldx #$4f
+	ldy #$10
+	ldx #$10
 killtime_1:
 	jsr killtime_2
 	dex
@@ -372,29 +427,29 @@ palette:
 
 dino_sprites:
 dino_0_top:
-	.db	$D0, $D1, $D2, $00
+	.db	$D0, $D1, $D2, $20
 dino_0_mid:
-	.db $E0, $E1, $E2, $00
+	.db $E0, $E1, $E2, $20
 dino_0_bot:
-	.db $F0, $F1, $F2, $00
+	.db $F0, $F1, $F2, $20
 dino_1_top:
-	.db	$D3, $D4, $D5, $00
+	.db	$D3, $D4, $D5, $20
 dino_1_mid:
-	.db $E3, $E4, $E5, $00
+	.db $E3, $E4, $E5, $20
 dino_1_bot:
-	.db $F3, $F4, $F5, $00
+	.db $F3, $F4, $F5, $20
 dino_2_top:
-	.db	$D6, $D7, $D8, $00
+	.db	$D6, $D7, $D8, $20
 dino_2_mid:
-	.db $E6, $E7, $E8, $00
+	.db $E6, $E7, $E8, $20
 dino_2_bot:
-	.db $F6, $F7, $F8, $00
+	.db $F6, $F7, $F8, $20
 dino_3_top:
-	.db	$D9, $DA, $DB, $00
+	.db	$D9, $DA, $DB, $20
 dino_3_mid:
-	.db $E9, $EA, $EB, $00
+	.db $E9, $EA, $EB, $20
 dino_3_bot:
-	.db $F9, $FA, $FB, $00
+	.db $F9, $FA, $FB, $20
 
 
 
