@@ -96,14 +96,55 @@ HelloWorld_AttributeTable:
 	; set scrolling position and enable screen
 	sta	$2005
 	sta	$2005
-	LDA	$001000 ; enable background
-	STA	$2001
+	lda	$001000 ; enable background
+	sta	$2001
+	lda	#$20
+	sta	$0010
 
 MainGameLoop:
-	jsr	killtime
+	;jsr	killtime
+	lda	$0010
+	pha
 	jsr	Print_Dino1
-	jsr	killtime
+	pla
+	;jsr	killtime
+	lda	$0010
+	pha
 	jsr Print_Dino2
+	pla
+	ldy	#$00
+CheckInput:
+	lda	#$01
+	sta	$4016
+	lda	#$00
+	sta	$4016
+	lda	$4016
+	lda	$4016
+	lda	$4016
+	lda	$4016
+	lda	$4016
+	lda	$4016
+	lda	$4016
+	and #$03
+	cmp	#$01
+	beq	MoveLeft
+	lda	$4016
+	and #$03
+	cmp	#$01
+	beq	MoveRight
+	iny
+	cpy	#$FF
+	beq	MainGameLoop
+	jmp	CheckInput
+MoveLeft:
+	ldx	$0010
+	dex
+	stx	$0010
+	jmp MainGameLoop
+MoveRight:
+	ldx	$0010
+	inx
+	stx	$0010
 	jmp MainGameLoop
 
 ; ---------
@@ -116,16 +157,16 @@ WaitForVBlank:
 	rts
 
 killtime:
-	LDY #$FF
-	LDX #$FF
+	ldy #$8f
+	ldx #$8f
 killtime_1:
-	JSR killtime_2
-	DEX
-	BNE killtime_1
-	DEY
-	BNE killtime_1
+	jsr killtime_2
+	dex
+	bne killtime_1
+	dey
+	bne killtime_1
 killtime_2:
-	RTS
+	rts
 
 Print_Dino1:
 	jsr WaitForVBlank
@@ -136,6 +177,11 @@ Print_Dino1:
 	lda	$2002
 	lda	#$20
 	sta	$2006	; write high
+	tsx
+	inx
+	inx
+	inx
+	lda	$0100, x	
 	sta	$2006	; write low
 	ldx	#0
 
@@ -143,28 +189,28 @@ Print_DinoTop1:
 	lda	dino_top, x
 	sta	$2007	; write character
 	inx
-	cpx	#$4
+	cpx	#$5
 	bne	Print_DinoTop1
 	lda	#$20
 	ldx	#$0
 Print_DinoLine1:
 	sta	$2007
 	inx
-	cpx	#$1C
+	cpx	#$1B
 	bne Print_DinoLine1
 	ldx	#$00
 Print_DinoBot1:
 	lda dino_bot, x
 	sta	$2007
 	inx
-	cpx	#$4
+	cpx	#$5
 	bne	Print_DinoBot1
 	; set scrolling position and enable screen
 	lda	#$00
 	sta	$2005
 	sta	$2005
-	LDA	$001000 ; enable background
-	STA	$2001
+	lda	$001000 ; enable background
+	sta	$2001
 	rts
 
 Print_Dino2:
@@ -176,6 +222,11 @@ Print_Dino2:
 	lda	$2002
 	lda	#$20
 	sta	$2006	; write high
+	tsx
+	inx
+	inx
+	inx
+	lda	$100, x	
 	sta	$2006	; write low
 	ldx	#0
 
@@ -183,28 +234,28 @@ Print_DinoTop2:
 	lda	dino_top, x
 	sta	$2007	; write character
 	inx
-	cpx	#$4
+	cpx	#$5
 	bne	Print_DinoTop2
 	lda	#$20
 	ldx	#$0
 Print_DinoLine2:
 	sta	$2007
 	inx
-	cpx	#$1C
+	cpx	#$1B
 	bne Print_DinoLine2
 	ldx	#$00
 Print_DinoBot2:
 	lda dino_bot2, x
 	sta	$2007
 	inx
-	cpx	#$4
+	cpx	#$5
 	bne	Print_DinoBot2
 	; set scrolling position and enable screen
 	lda	#$00
 	sta	$2005
 	sta	$2005
-	LDA	$001000 ; enable background
-	STA	$2001
+	lda	$001000 ; enable background
+	sta	$2001
 	rts
 
 ; ---------
@@ -223,11 +274,11 @@ palette:
 hello_string:
 	.db "  Hello World!!!", $00 
 dino_top:
-	.db $EC, $ED, $EE, $EF, $00
+	.db $EC, $ED, $EE, $EF, $20, $00
 dino_bot:
-	.db $FC, $FD, $FE, $FF, $00
+	.db $FC, $FD, $FE, $FF, $20, $00
 dino_bot2:
-	.db $DC, $DD, $DE, $DF, $00
+	.db $DC, $DD, $DE, $DF, $20, $00
 
 	; jump vectors
 	.org	$FFFA
