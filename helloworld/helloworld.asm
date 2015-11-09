@@ -34,7 +34,6 @@ LoadPalettesLoop:
 	inx
 	cpx	#$20
 	bne	LoadPalettesLoop
-
 HelloWorld:
 	lda	#$00
 	sta	$2001	; reset latch
@@ -74,8 +73,8 @@ HelloWorld_DinoBot:
 	inx
 	cpx	#$4
 	bne	HelloWorld_DinoBot
-	; then fill the rest of screen with blanks
-	ldx	#$74	; $10 + $8 + $1C printed chars and $40 attribute bytes
+	; fill the screen with blanks
+	ldx	#40
 	ldy	#3		; 3 times
 	lda	#$20	; spaces
 HelloWorld_BottomBlank:
@@ -122,6 +121,9 @@ CheckInput:
 	lda	$4016
 	lda	$4016
 	lda	$4016
+	and	#$03
+	cmp	#$01
+	beq	MoveStart
 	lda	$4016
 	lda	$4016
 	lda	$4016
@@ -146,6 +148,10 @@ MoveRight:
 	inx
 	stx	$0010
 	jmp MainGameLoop
+MoveStart:
+	ldx	#$20
+	stx	$0010
+	jmp	MainGameLoop
 
 ; ---------
 ; functions
@@ -174,7 +180,7 @@ Print_Dino1:
 
 	lda	#$00
 	sta	$2001	; reset latch
-	lda	$2002
+	;lda	$2002
 	lda	#$20
 	sta	$2006	; write high
 	tsx
