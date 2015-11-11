@@ -41,7 +41,7 @@ EntryLoadPalettesLoop:
 	lda	#$20
 	sta	$2006	; write high
 	stx	$2006	; write low
-	ldx	#$50
+	ldx	#$20
 	ldy	#$03
 	lda	#$20
 EntryBlankScreen:
@@ -130,6 +130,12 @@ dontMoveLeft:
 	bne	dontMoveRight
 	jsr	MoveRight
 dontMoveRight:
+	; A
+	lda	$2020
+	cmp	#$01
+	bne	dontFireLaser
+	jsr	FireLaser
+dontFireLaser:
 	; Check if moved
 	lda	$002D
 	cmp	#$0
@@ -139,13 +145,82 @@ dontMoveRight:
 notMovedThisFrame:
 	jsr	DoJumping
 	jsr	DoFalling
+	jsr	DoLaser
+	rts
+
+FireLaser:
+	lda	$0050
+	cmp	#$01
+	beq	skipFireLaser
+	lda	#$01
+	sta	$0050
+	ldx	$0028
+	ldy	$0028
+	inx
+	inx
+	stx	$0051
+	sty	$0052
+	lda	$002E
+	sta	$0055
+	lda	$002F
+	sta	$0056
+	lda laser_anim
+	sta	$0053
+	lda	#$07
+	sta	$0054
+skipFireLaser:
+	rts
+	
+DoLaser:
+	lda	$0050 ; exist
+	cmp	#$01
+	lda	$00
+	beq	skipDoLaser
+	lda	$0054 ; timeout
+	cmp	#$00
+	beq	destroyLaser
+	cmp	#$01
+	beq	laserLastFrame
+	cmp	#$02
+	beq	laser2LastFrame
+	cmp	#$07
+	beq	laserFirstFrame
+	ldx	#$01
+	lda	laser_anim, x
+	sta	$0053
+	jmp moveLaser
+laserLastFrame:
+	ldx	#$02
+	lda	laser_anim, x
+	sta	$0053
+	jmp	moveLaser
+laser2LastFrame:
+	ldx	#$02
+	lda	laser_anim, x
+	sta	$0053
+	jmp	moveLaser
+laserFirstFrame:
+	ldx	#$00
+	lda	laser_anim, x
+	sta	$0053
+	jmp	moveLaser
+moveLaser:
+	ldx	$0054
+	dex
+	stx	$0054
+	lda	#$01
+	sta	$0001
+	jsr	AddToLaser
+	jmp	skipDoLaser
+destroyLaser:
+	lda	#$00
+	sta	$0050
+	lda	#$20
+	sta	$0053
+skipDoLaser:
 	rts
 
 Jump:
-	;lda	#$20
-	;sta	$0001
-	;jsr	SubtractFromOffset
-	;rts
 	lda	$002B
 	cmp	#$00
 	bne	nopeAlreadyJumping
@@ -232,6 +307,16 @@ AddToOffset:
 	sta	$002E
 	rts
 
+AddToLaser:
+	lda	$0056
+	clc
+	adc	$0001
+	sta	$0056
+	lda	$0055
+	adc	#$00
+	sta	$0055
+	rts
+
 DinoIsMoving:
 	lda	$002C
 	cmp	#$02
@@ -252,13 +337,6 @@ Render:
 	sta	$2001	; reset latch
 	ldx	#0
 	lda	$2002
-	;lda	#$23
-	;sta	$2006	; write high
-	; #$40 left of screen
-	; #$5E right
-	;jsr OffsetFromXY
-	;lda	#$20
-	;lda	$002E
 	lda	$002E
 	sta	$2006	; write high
 	lda	$002F
@@ -311,9 +389,6 @@ DrawDinoForReal:
 	lda	dino_sprites, x
 	sta	$2007
 	inx
-	;lda	dino_sprites, x
-	;sta	$2007
-	;inx
 	ldy	#$03
 	jsr	PrintLine
 	inx
@@ -326,9 +401,6 @@ DrawDinoForReal:
 	lda	dino_sprites, x
 	sta	$2007
 	inx
-	;lda	dino_sprites, x
-	;sta	$2007
-	;inx
 	ldy	#$03
 	jsr	PrintLine
 	inx
@@ -341,11 +413,20 @@ DrawDinoForReal:
 	lda	dino_sprites, x
 	sta	$2007
 	inx
-	;lda	dino_sprites, x
-	;sta	$2007
-	;inx
-
+DrawLaser:
+	lda	$0050
+	cmp	#$00
+	beq	dontDrawTheLaser
+	
+dontDrawTheLaser:
 	; set attribute tables ( palette table is after screen )
+	lda	$0050
+	cmp	#$00
+	beq	laserDontExist
+	ldx #$41
+	lda	#$0
+	jmp	WriteAttributeTable
+laserDontExist:
 	ldx	#$40
 	lda	#$0
 WriteAttributeTable:
@@ -450,6 +531,8 @@ dino_3_mid:
 	.db $E9, $EA, $EB, $20
 dino_3_bot:
 	.db $F9, $FA, $FB, $20
+laser_anim:
+	.db	$DE, $DF, $EF, $FF
 
 
 
